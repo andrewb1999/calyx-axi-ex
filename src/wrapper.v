@@ -203,10 +203,10 @@ module Toplevel (
             end
         endcase
     end
-    wire [31:0] A0_write_data = 32'b0;
+    wire [31:0] A0_write_data;
     wire [31:0] A0_read_data;
     wire [3:0] A0_addr0;
-    wire A0_write_en = 1'b0;
+    wire A0_write_en;
     wire A0_done;
     Memory_controller_axi_0 inst_mem_controller_axi_0 (
         .ACLK(ap_clk),
@@ -239,7 +239,7 @@ module Toplevel (
         .RREADY(m0_axi_RREADY),
         .RRESP(m0_axi_RRESP),
         .RVALID(m0_axi_RVALID),
-        .SEND_TO_HOST(1'b0),
+        .SEND_TO_HOST(A0_send),
         .SEND_TO_HOST_DONE(A0_send_done),
         .WDATA(m0_axi_WDATA),
         .WE(A0_write_en),
@@ -250,10 +250,10 @@ module Toplevel (
         .WSTRB(m0_axi_WSTRB),
         .WVALID(m0_axi_WVALID)
     );
-    wire [31:0] B0_write_data = 32'b0;
+    wire [31:0] B0_write_data;
     wire [31:0] B0_read_data;
     wire [3:0] B0_addr0;
-    wire B0_write_en = 1'b0;
+    wire B0_write_en;
     wire B0_done;
     Memory_controller_axi_1 inst_mem_controller_axi_1 (
         .ACLK(ap_clk),
@@ -286,7 +286,7 @@ module Toplevel (
         .RREADY(m1_axi_RREADY),
         .RRESP(m1_axi_RRESP),
         .RVALID(m1_axi_RVALID),
-        .SEND_TO_HOST(1'b0),
+        .SEND_TO_HOST(B0_send),
         .SEND_TO_HOST_DONE(B0_send_done),
         .WDATA(m1_axi_WDATA),
         .WE(B0_write_en),
@@ -351,14 +351,14 @@ module Toplevel (
         .A0_clk(),
         .A0_done(A0_done),
         .A0_read_data(A0_read_data),
-        .A0_write_data(),
-        .A0_write_en(),
+        .A0_write_data(A0_write_data),
+        .A0_write_en(A0_write_en),
         .B0_addr0(B0_addr0),
         .B0_clk(),
         .B0_done(B0_done),
         .B0_read_data(B0_read_data),
-        .B0_write_data(),
-        .B0_write_en(),
+        .B0_write_data(B0_write_data),
+        .B0_write_en(B0_write_en),
         .clk(ap_clk),
         .done(kernel_done),
         .go(kernel_start),
@@ -378,7 +378,7 @@ module Toplevel (
             counter <= 32'd0;
         end
     end
-    assign ap_done = memories_sent[2];
+    assign ap_done = memories_sent == 3'b111;
 endmodule
 
 module SINGLE_PORT_BRAM (
@@ -392,10 +392,9 @@ module SINGLE_PORT_BRAM (
     (*ram_style = "block"*) reg [31:0] ram_core [15:0];
     reg [31:0] dout_tmp = 32'b0;
     always @(posedge ACLK) begin
-        if(WE)
+        if(WE) begin
             ram_core[ADDR] <= Din;
-        else
-            dout_tmp <= ram_core[ADDR];
+        end
     end
     reg done_reg;
     always @(posedge ACLK) begin

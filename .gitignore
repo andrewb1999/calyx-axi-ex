@@ -2,3 +2,4 @@ build/
 _x/
 *.log
 .Xil/
+fud-out-*/
