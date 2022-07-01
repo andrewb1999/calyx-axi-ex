@@ -1,0 +1,4 @@
+build/
+_x/
+*.log
+.Xil/
