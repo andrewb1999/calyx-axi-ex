@@ -389,7 +389,7 @@ module SINGLE_PORT_BRAM (
     output wire [31:0] Dout,
     output wire Done
 );
-    (*ram_style = "block"*) reg [31:0] ram_core [15:0];
+    (*ram_style = "block"*) reg [31:0] ram_core [31:0];
     reg [31:0] dout_tmp = 32'b0;
     always @(posedge ACLK) begin
         if(WE) begin
@@ -785,8 +785,6 @@ module Memory_controller_axi_0 (
         end
     end
     
-    
-    
     always @(posedge ACLK) begin
         if(ARESET) begin
             rdata_internal <= 0;
@@ -872,8 +870,7 @@ module Memory_controller_axi_0 (
         end else copy_addr_offset <= 0;
     end
     assign ARID = 0;
-    wire [63:0] araddr_offset = ({{58{1'b0}}, copy_addr_offset} << 2);
-    assign ARADDR = BASE_ADDRESS + araddr_offset;
+    assign ARADDR = BASE_ADDRESS + ({58'd0, copy_addr_offset} << 2);
     assign ARLEN = 0;
     assign ARSIZE = 6;
     reg [1:0] wstate;
@@ -926,7 +923,7 @@ module Memory_controller_axi_0 (
     assign AWID = 0;
     assign AWADDR = BASE_ADDRESS + {{58{1'b0}}, send_addr_offset} << 2;
     assign AWLEN = 0;
-    assign AWSIZE = 2;
+    assign AWSIZE = 6;
     assign WID = 0;
     assign WDATA = {{15{bram_read_data}}, bram_read_data};
     assign WSTRB = {{15{4'hF}}, 4'hF};
@@ -1123,8 +1120,7 @@ module Memory_controller_axi_1 (
         end else copy_addr_offset <= 0;
     end
     assign ARID = 0;
-    wire [63:0] araddr_offset = ({{58{1'b0}}, copy_addr_offset} << 2);
-    assign ARADDR = BASE_ADDRESS + araddr_offset;
+    assign ARADDR = BASE_ADDRESS + ({58'd0, copy_addr_offset} << 2);
     assign ARLEN = 0;
     assign ARSIZE = 6;
     reg [1:0] wstate;
@@ -1177,7 +1173,7 @@ module Memory_controller_axi_1 (
     assign AWID = 0;
     assign AWADDR = BASE_ADDRESS + {{58{1'b0}}, send_addr_offset} << 2;
     assign AWLEN = 0;
-    assign AWSIZE = 2;
+    assign AWSIZE = 6;
     assign WID = 0;
     assign WDATA = {{15{bram_read_data}}, bram_read_data};
     assign WSTRB = {{15{4'hF}}, 4'hF};
@@ -1396,8 +1392,7 @@ module Memory_controller_axi_2 (
         end else send_addr_offset <= 0;
     end
     assign AWID = 0;
-//    assign AWADDR = BASE_ADDRESS + {{58{1'b0}}, send_addr_offset} << 2;
-    assign AWADDR = BASE_ADDRESS;
+    assign AWADDR = BASE_ADDRESS + ({{58{1'b0}}, send_addr_offset} << 2);
     assign AWLEN = 0;
     assign AWSIZE = 2;
     assign WID = 0;
