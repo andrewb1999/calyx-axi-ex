@@ -722,9 +722,9 @@ module Memory_controller_axi_0 (
     output wire DONE
 );
     wire copy_done;
-    assign copy_done = copy_addr_offset == 32;
+    assign copy_done = copy_addr_offset == 8;
     wire send_done;
-    assign send_done = send_addr_offset == 32;
+    assign send_done = send_addr_offset == 8;
     reg [2:0] memory_mode_state;
     reg [2:0] memory_mode_next;
     always @(posedge ACLK) begin
@@ -943,9 +943,9 @@ module Memory_controller_axi_1 (
     output wire DONE
 );
     wire copy_done;
-    assign copy_done = copy_addr_offset == 32;
+    assign copy_done = copy_addr_offset == 8;
     wire send_done;
-    assign send_done = send_addr_offset == 32;
+    assign send_done = send_addr_offset == 8;
     reg [2:0] memory_mode_state;
     reg [2:0] memory_mode_next;
     always @(posedge ACLK) begin
