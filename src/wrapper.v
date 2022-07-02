@@ -725,9 +725,9 @@ module Memory_controller_axi_0 (
     output wire DONE
 );
     wire copy_done;
-    assign copy_done = copy_addr_offset == 1;
+    assign copy_done = copy_addr_offset == 32;
     wire send_done;
-    assign send_done = send_addr_offset == 1;
+    assign send_done = send_addr_offset == 32;
     reg [2:0] memory_mode_state;
     reg [2:0] memory_mode_next;
     always @(posedge ACLK) begin
@@ -771,30 +771,14 @@ module Memory_controller_axi_0 (
             end
         endcase
     end
-    reg [2:0] rstate;
-    reg [2:0] rnext;
     reg [3:0] read_txn_count;
-    reg [511:0] rdata_internal;
     always @(posedge ACLK) begin
         if(ARESET) begin
             read_txn_count <= 0;
-        end else if (RVALID & RREADY) begin
-            read_txn_count <= 0;
-        end else if(rstate == 3) begin
+        end else if(RVALID & RREADY) begin
             read_txn_count <= read_txn_count + 1;
         end
     end
-    
-    always @(posedge ACLK) begin
-        if(ARESET) begin
-            rdata_internal <= 0;
-        end else if (RVALID & RREADY) begin
-            rdata_internal <= RDATA;
-        end else if(rstate == 0) begin
-            rdata_internal <= 0;
-        end
-    end
-    
     wire [4:0] bram_addr;
     wire [31:0] bram_write_data;
     wire bram_we;
@@ -809,20 +793,20 @@ module Memory_controller_axi_0 (
         .WE(bram_we)
     );
     assign DONE = bram_done;
-    assign bram_addr = rstate == 3 && memory_mode_state == 1 ? read_txn_count + (copy_addr_offset[4:0] * 16) :
+    assign bram_addr = RVALID & RREADY && memory_mode_state == 1 ? copy_addr_offset[4:0] :
      memory_mode_state == 2 ? ADDR :
      memory_mode_state == 3 ? send_addr_offset[4:0] : 0;
-    assign bram_we = rstate == 3 && memory_mode_state == 1 ? 1 :
+    assign bram_we = RVALID & RREADY && memory_mode_state == 1 ? 1 :
      memory_mode_state == 2 ? WE : 0;
-    wire [31:0] rdata_part = rdata_internal[read_txn_count * 32 +: 32];
-    assign bram_write_data = rstate == 3 && memory_mode_state == 1 ? rdata_part :
+    assign bram_write_data = RVALID & RREADY && memory_mode_state == 1 ? RDATA[read_txn_count * 32 +: 32] :
      memory_mode_state == 2 ? WRITE_DATA : 0;
     assign READ_DATA = bram_read_data;
-
+    reg [1:0] rstate;
+    reg [1:0] rnext;
     always @(posedge ACLK) begin
         if(ARESET) begin
             rstate <= 0;
-        end else if (!copy_done) begin
+        end else begin
             rstate <= rnext;
         end
     end
@@ -842,20 +826,9 @@ module Memory_controller_axi_0 (
             end
             2 : begin
                 if(RVALID) begin
-                    rnext = 3;
+                    rnext = 0;
                 end else rnext = 2;
             end
-            3 : begin
-                // Copy all data parts
-                if(read_txn_count == 15) begin
-                    rnext = 4;
-                end else rnext = 3;
-            end
-            
-            4: begin
-                rnext = 0;
-            end
-            
             default : begin
                 rnext = 0;
             end
@@ -864,15 +837,15 @@ module Memory_controller_axi_0 (
     reg [5:0] copy_addr_offset;
     always @(posedge ACLK) begin
         if(memory_mode_state == 1) begin
-            if(rstate == 4) begin
+            if(RVALID & RREADY) begin
                 copy_addr_offset <= copy_addr_offset + 1;
-            end
+            end else copy_addr_offset <= copy_addr_offset;
         end else copy_addr_offset <= 0;
     end
     assign ARID = 0;
-    assign ARADDR = BASE_ADDRESS + ({58'd0, copy_addr_offset} << 2);
+    assign ARADDR = BASE_ADDRESS + ({{58{1'b0}}, copy_addr_offset} << 2);
     assign ARLEN = 0;
-    assign ARSIZE = 6;
+    assign ARSIZE = 2;
     reg [1:0] wstate;
     reg [1:0] wnext;
     always @(posedge ACLK) begin
@@ -921,9 +894,9 @@ module Memory_controller_axi_0 (
         end else send_addr_offset <= 0;
     end
     assign AWID = 0;
-    assign AWADDR = BASE_ADDRESS + {{58{1'b0}}, send_addr_offset} << 2;
+    assign AWADDR = BASE_ADDRESS + ({{58{1'b0}}, send_addr_offset} << 2);
     assign AWLEN = 0;
-    assign AWSIZE = 6;
+    assign AWSIZE = 2;
     assign WID = 0;
     assign WDATA = {{15{bram_read_data}}, bram_read_data};
     assign WSTRB = {{15{4'hF}}, 4'hF};
@@ -973,9 +946,9 @@ module Memory_controller_axi_1 (
     output wire DONE
 );
     wire copy_done;
-    assign copy_done = copy_addr_offset == 1;
+    assign copy_done = copy_addr_offset == 32;
     wire send_done;
-    assign send_done = send_addr_offset == 1;
+    assign send_done = send_addr_offset == 32;
     reg [2:0] memory_mode_state;
     reg [2:0] memory_mode_next;
     always @(posedge ACLK) begin
@@ -1019,32 +992,14 @@ module Memory_controller_axi_1 (
             end
         endcase
     end
-    reg [2:0] rstate;
-    reg [2:0] rnext;
     reg [3:0] read_txn_count;
-    reg [511:0] rdata_internal;
     always @(posedge ACLK) begin
         if(ARESET) begin
             read_txn_count <= 0;
-        end else if (RVALID & RREADY) begin
-            read_txn_count <= 0;
-        end else if(rstate == 3) begin
+        end else if(RVALID & RREADY) begin
             read_txn_count <= read_txn_count + 1;
         end
     end
-    
-    
-    
-    always @(posedge ACLK) begin
-        if(ARESET) begin
-            rdata_internal <= 0;
-        end else if (RVALID & RREADY) begin
-            rdata_internal <= RDATA;
-        end else if(rstate == 0) begin
-            rdata_internal <= 0;
-        end
-    end
-    
     wire [4:0] bram_addr;
     wire [31:0] bram_write_data;
     wire bram_we;
@@ -1059,20 +1014,20 @@ module Memory_controller_axi_1 (
         .WE(bram_we)
     );
     assign DONE = bram_done;
-    assign bram_addr = rstate == 3 && memory_mode_state == 1 ? read_txn_count + (copy_addr_offset[4:0] * 16) :
+    assign bram_addr = RVALID & RREADY && memory_mode_state == 1 ? copy_addr_offset[4:0] :
      memory_mode_state == 2 ? ADDR :
      memory_mode_state == 3 ? send_addr_offset[4:0] : 0;
-    assign bram_we = rstate == 3 && memory_mode_state == 1 ? 1 :
+    assign bram_we = RVALID & RREADY && memory_mode_state == 1 ? 1 :
      memory_mode_state == 2 ? WE : 0;
-    wire [31:0] rdata_part = rdata_internal[read_txn_count * 32 +: 32];
-    assign bram_write_data = rstate == 3 && memory_mode_state == 1 ? rdata_part :
+    assign bram_write_data = RVALID & RREADY && memory_mode_state == 1 ? RDATA[read_txn_count * 32 +: 32] :
      memory_mode_state == 2 ? WRITE_DATA : 0;
     assign READ_DATA = bram_read_data;
-
+    reg [1:0] rstate;
+    reg [1:0] rnext;
     always @(posedge ACLK) begin
         if(ARESET) begin
             rstate <= 0;
-        end else if (!copy_done) begin
+        end else begin
             rstate <= rnext;
         end
     end
@@ -1092,20 +1047,9 @@ module Memory_controller_axi_1 (
             end
             2 : begin
                 if(RVALID) begin
-                    rnext = 3;
+                    rnext = 0;
                 end else rnext = 2;
             end
-            3 : begin
-                // Copy all data parts
-                if(read_txn_count == 15) begin
-                    rnext = 4;
-                end else rnext = 3;
-            end
-            
-            4: begin
-                rnext = 0;
-            end
-            
             default : begin
                 rnext = 0;
             end
@@ -1114,15 +1058,15 @@ module Memory_controller_axi_1 (
     reg [5:0] copy_addr_offset;
     always @(posedge ACLK) begin
         if(memory_mode_state == 1) begin
-            if(rstate == 4) begin
+            if(RVALID & RREADY) begin
                 copy_addr_offset <= copy_addr_offset + 1;
-            end
+            end else copy_addr_offset <= copy_addr_offset;
         end else copy_addr_offset <= 0;
     end
     assign ARID = 0;
-    assign ARADDR = BASE_ADDRESS + ({58'd0, copy_addr_offset} << 2);
+    assign ARADDR = BASE_ADDRESS + ({{58{1'b0}}, copy_addr_offset} << 2);
     assign ARLEN = 0;
-    assign ARSIZE = 6;
+    assign ARSIZE = 2;
     reg [1:0] wstate;
     reg [1:0] wnext;
     always @(posedge ACLK) begin
@@ -1171,11 +1115,11 @@ module Memory_controller_axi_1 (
         end else send_addr_offset <= 0;
     end
     assign AWID = 0;
-    assign AWADDR = BASE_ADDRESS + {{58{1'b0}}, send_addr_offset} << 2;
+    assign AWADDR = BASE_ADDRESS + ({{58{1'b0}}, send_addr_offset} << 2);
     assign AWLEN = 0;
-    assign AWSIZE = 6;
+    assign AWSIZE = 2;
     assign WID = 0;
-    assign WDATA = {{15{bram_read_data}}, bram_read_data};
+    assign WDATA = {{15{32'd0}}, bram_read_data};
     assign WSTRB = {{15{4'hF}}, 4'hF};
     assign WLAST = 1;
 endmodule
