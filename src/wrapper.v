@@ -785,8 +785,6 @@ module Memory_controller_axi_0 (
         end
     end
     
-    
-    
     always @(posedge ACLK) begin
         if(ARESET) begin
             rdata_internal <= 0;
@@ -1035,8 +1033,6 @@ module Memory_controller_axi_1 (
             read_txn_count <= read_txn_count + 1;
         end
     end
-    
-    
     
     always @(posedge ACLK) begin
         if(ARESET) begin
