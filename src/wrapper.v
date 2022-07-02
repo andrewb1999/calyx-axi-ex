@@ -151,13 +151,11 @@ module Toplevel (
     wire v0_send;
     wire v0_send_done;
     wire memories_copied;
-    reg [2:0] memories_sent;
+    reg memories_sent;
     assign memories_copied = A0_copy_done && B0_copy_done && v0_copy_done;
     always @(posedge ap_clk) begin
         if(host_txn_state == 3) begin
-            memories_sent[0] <= A0_send_done;
-            memories_sent[1] <= B0_send_done;
-            memories_sent[2] <= v0_send_done;
+            memories_sent <= A0_send_done & B0_send_done & v0_send_done;
         end else memories_sent <= 0;
     end
     reg [1:0] host_txn_state;
@@ -378,7 +376,7 @@ module Toplevel (
             counter <= 32'd0;
         end
     end
-    assign ap_done = memories_sent == 3'b111;
+    assign ap_done = memories_sent;
 endmodule
 
 module SINGLE_PORT_BRAM (
@@ -390,7 +388,6 @@ module SINGLE_PORT_BRAM (
     output wire Done
 );
     (*ram_style = "block"*) reg [31:0] ram_core [31:0];
-    reg [31:0] dout_tmp = 32'b0;
     always @(posedge ACLK) begin
         if(WE) begin
             ram_core[ADDR] <= Din;
@@ -898,8 +895,8 @@ module Memory_controller_axi_0 (
     assign AWLEN = 0;
     assign AWSIZE = 2;
     assign WID = 0;
-    assign WDATA = {{15{bram_read_data}}, bram_read_data};
-    assign WSTRB = {{15{4'hF}}, 4'hF};
+    assign WDATA = {{15{8'd0}}, bram_read_data};
+    assign WSTRB = {{15{4'h0}}, 4'hF};
     assign WLAST = 1;
 endmodule
 
@@ -1119,8 +1116,8 @@ module Memory_controller_axi_1 (
     assign AWLEN = 0;
     assign AWSIZE = 2;
     assign WID = 0;
-    assign WDATA = {{15{32'd0}}, bram_read_data};
-    assign WSTRB = {{15{4'hF}}, 4'hF};
+    assign WDATA = {{15{8'd0}}, bram_read_data};
+    assign WSTRB = {{15{4'h0}}, 4'hF};
     assign WLAST = 1;
 endmodule
 
@@ -1341,7 +1338,7 @@ module Memory_controller_axi_2 (
     assign AWSIZE = 2;
     assign WID = 0;
     assign WDATA = {{15{8'b0}}, bram_read_data};
-    assign WSTRB = {{15{4'hF}}, 4'hF};
+    assign WSTRB = {{15{4'h0}}, 4'hF};
     assign WLAST = 1;
 endmodule
 `default_nettype wire
