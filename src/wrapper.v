@@ -389,8 +389,7 @@ module SINGLE_PORT_BRAM (
     output wire [31:0] Dout,
     output wire Done
 );
-    (*ram_style = "block"*) reg [31:0] ram_core [15:0];
-    reg [31:0] dout_tmp = 32'b0;
+    (*ram_style = "block"*) reg [31:0] ram_core [31:0];
     always @(posedge ACLK) begin
         if(WE) begin
             ram_core[ADDR] <= Din;
@@ -1392,8 +1391,7 @@ module Memory_controller_axi_2 (
         end else send_addr_offset <= 0;
     end
     assign AWID = 0;
-//    assign AWADDR = BASE_ADDRESS + {{58{1'b0}}, send_addr_offset} << 2;
-    assign AWADDR = BASE_ADDRESS;
+    assign AWADDR = BASE_ADDRESS + ({{58{1'b0}}, send_addr_offset} << 2);
     assign AWLEN = 0;
     assign AWSIZE = 2;
     assign WID = 0;
